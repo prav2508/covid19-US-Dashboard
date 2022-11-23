@@ -4,10 +4,10 @@ var { buildSchema } = require('graphql');
 var bodyParser = require('body-parser')
 const mysql = require('mysql');
 const moment = require('moment');
-
+const cors = require('cors');
 
 const connection = mysql.createConnection({
-  host: 'localhost',
+  host: '127.0.0.1',
   user: 'root',
   password: 'password',
   database: 'covid19'
@@ -23,13 +23,15 @@ const queryString = "WITH added_row_number AS ("
   +"FROM added_row_number "
   +"WHERE row_n = 1"
 
+  const getCovidDataQuery = "SELECT * FROM covid19.t_covid_data order by submission_date, state"
+
 var covidData
 const formatDate = (date)=>{
   return moment(date).format('YYYY-MM-DD HH:mm:ss');
 }
 connection.connect()
 
-connection.query(queryString, (err, rows, fields) => {
+connection.query(getCovidDataQuery, (err, rows, fields) => {
   if (err) throw err
   rows = rows.map(row => ({
     ...row,
@@ -40,7 +42,6 @@ connection.query(queryString, (err, rows, fields) => {
 })
 
 var schema = buildSchema(`
-
     type CovidData{
       id: ID,
       submission_date: String!
@@ -87,6 +88,10 @@ var root = {
             };
 
 var app = express();
+
+app.use(cors({
+  origin: '*'
+}));
 
 app.use(bodyParser.json())
 
